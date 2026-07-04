@@ -23,7 +23,9 @@ largest files, and duplicate detection.
 
 ## Installation
 
-Download and run `FileAnalyzer-1.0.0.exe` from the latest release.
+Download and run the installer directly:
+
+**[⬇ Download FileAnalyzer-1.0.0.exe](https://github.com/shashwat4543/FileAnalyzer/releases/download/v1.0.0/FileAnalyzer-1.0.0.exe)**
 
 The installer will place the app in `C:\Program Files\FileAnalyzer\`.
 After installation, add it to your PATH:
@@ -191,18 +193,24 @@ Use `--output <directory>` to save reports to a different location.
 
 ---
 
-## Building from Source
+## For Developers
+
+This section is only needed if you want to modify the source code or build the installer yourself. If you just want to use the app, download the exe above.
 
 **Requirements:** Java 17+, IntelliJ IDEA (or any Java IDE)
 
-1. Clone or download the project.
+### Build the jar
+
+1. Clone the repo: `git clone https://github.com/shashwat4543/FileAnalyzer.git`
 2. Open in IntelliJ IDEA.
 3. `File` → `Project Structure` → `Artifacts` → `+` → `JAR` → `From modules with dependencies`
 4. Set Main Class to `app.Main`, click OK → Apply.
 5. `Build` → `Build Artifacts` → `Build`.
 6. The jar appears in `out/artifacts/FileAnalyzer_jar/FileAnalyzer.jar`.
 
-**To build the Windows installer:**
+### Build the Windows installer
+
+Requires JDK 17+ and WiX Toolset installed.
 
 ```cmd
 "C:\Program Files\Java\jdk-17\bin\jpackage.exe" ^
