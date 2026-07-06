@@ -920,3 +920,223 @@ and Linux users must run the app via `java -jar`.
 **Effort:** Low for the build steps, Medium for setting up GitHub Actions CI.
 
 ---
+
+---
+
+## 10. The Evolution — How Each Feature Was Built
+
+This section documents the real development journey behind each major feature —
+not just what the final code does, but why it changed, what failed first, and
+what was learned along the way.
+
+---
+
+### Duplicate Detection — From Slow to Fast
+
+**Version 1 — Size filter + full SHA-256 (single-threaded)**
+
+The first approach was already smarter than brute force. Rather than comparing
+every file to every other file (which would mean billions of comparisons on a
+large drive), files were grouped by exact size first. Only same-size groups
+were hashed. This eliminated the vast majority of files with zero I/O cost.
+
+Within each same-size group, full SHA-256 hashes were computed sequentially —
+one file at a time, one thread.
+
+This was correct. But when run on a root directory for the first time on a real
+laptop, it was painfully slow. The terminal went silent and stayed that way for
+minutes. Something had to change.
+
+**Version 2 — Quick hash prefilter (8KB)**
+
+The insight: most files that are different, are different near the start. If
+two files differ in the first 8KB, there's no point reading the rest of them.
+
+A quick hash was added — read only the first 8KB of each candidate file and
+hash just that. Files that don't match on the quick hash are immediately
+eliminated without reading their full content. Only files that match on both
+size AND quick hash proceed to full SHA-256.
+
+This was a meaningful improvement — especially for large files like videos and
+archives where reading the full file was expensive. But on a root directory
+with hundreds of thousands of candidates, it was still noticeably slow.
+
+**Version 3 — Parallel hashing**
+
+Hashing is CPU and I/O bound. Running it on a single thread leaves the other
+cores completely idle. A 4-thread `ExecutorService` was added — each thread
+hashes a different file concurrently. The `ExecutorService` was already familiar
+from `ReportFactory`, but this was the first time implementing it from scratch
+for a custom use case.
+
+The result was faster. But the terminal was now completely silent during the
+entire hashing phase — scan completed, then nothing for minutes. It looked frozen.
+
+**Version 4 — Progress bar during hashing**
+
+The progress bar already existed for directory scanning. It was extended to
+cover the hashing phase too — showing how many files had been hashed out of
+the total candidates, the elapsed time, and the current file being processed.
+
+This required synchronizing the progress reporter since multiple threads now
+called it concurrently — solved with `synchronized` on `updateHashing()` and
+`display()`, and `AtomicLong` for the thread-safe counter.
+
+The terminal was no longer silent. Users could see exactly where the app was
+and how much was left.
+
+---
+
+### Progress Bar — From Flood to Live Display
+
+**Version 1 — New line per file**
+
+The first progress implementation printed a new line for every file scanned.
+On a directory with tens of thousands of files this meant tens of thousands of
+lines flooding the terminal — the output was completely unusable and scrolled
+past faster than anyone could read.
+
+**Version 2 — Carriage return overwrite (`\r`)**
+
+The fix was to use `\r` (carriage return) instead of `\n` (newline). `\r` moves
+the cursor back to the start of the current line without advancing to a new line,
+so the next print overwrites what was there before. One line, updating in place.
+
+This worked. But it was plain white text with no visual hierarchy — hard to
+read at a glance.
+
+**Version 3 — ANSI colors, spinner, and Git Bash inspiration**
+
+Git Bash was the inspiration. The way `git clone` and `git push` display live
+progress — a spinner, colored stats, truncated path — was exactly the target UX.
+
+ANSI escape codes were used with AI assistance to implement colors (cyan spinner,
+green counts, yellow size, magenta speed, dim path), the Braille spinner animation,
+and 250ms throttling so the line doesn't flicker on every file.
+
+One subtle bug required careful fixing: ANSI codes add invisible characters to
+the string length. Using `line.length()` for the overwrite padding would leave
+ghost characters behind when the new line was shorter than the previous one.
+A `visibleLength()` method was added to strip ANSI codes before measuring,
+ensuring the old line is always fully erased.
+
+---
+
+### Directory Traversal — Recursion Rejected Upfront
+
+Recursion was the first instinct for walking a directory tree — it's the natural
+fit for a nested structure. But the `StackOverflowError` risk on deeply nested
+directories was recognized immediately. Real file systems can have hundreds of
+levels of nesting, and Java's default stack size would not survive them.
+
+An explicit `Stack<File>` was used from the start instead. The stack lives on
+the heap, not the call stack, so there's no depth limit. Directories are pushed
+and popped iteratively — no recursion, no risk.
+
+This was a deliberate upfront design decision rather than a reactive fix after
+a crash.
+
+---
+
+### Extension Report — Reality Check From a Real Directory
+
+The first implementation printed every extension found — a simple loop over the
+full map. The assumption was that a typical directory would have maybe 50-100
+unique extensions. That felt manageable.
+
+The first real scan proved that wrong immediately. A real Windows user directory
+has hundreds of unique extensions — app cache files, IDE internals, Python
+environment files, browser data, JDK class files, and dozens of obscure formats
+nobody asked for. The output was hundreds of lines long and completely unreadable.
+
+The fix was to cap the default output at the top 10 most common extensions —
+the ones that actually matter for understanding a directory's contents. The full
+map is still computed and stored internally. The `--all-extensions` flag was
+added for users who genuinely want everything.
+
+---
+
+### Duplicate Console Output — 19,850 Groups Is Too Many to Print
+
+The original implementation printed every duplicate file path to the console —
+full paths for every file in every group. On a small test directory with a few
+duplicate pairs, this looked fine.
+
+Then the app was run on a real machine. 19,850 duplicate groups were found.
+The console was completely flooded — thousands of file paths scrolling past,
+pushing the summary and stats completely off screen. The output was not just
+unreadable, it was actively counterproductive.
+
+The fix: the console shows only the three stats that matter at a glance —
+duplicate group count, total duplicate size, and wasted space. The full
+file-by-file listing is written to the `.txt` report only, where it belongs —
+a file the user can open, search, and read at their own pace.
+
+---
+
+### Interactive Shell — Inspired by Git Bash, Built for Double-Click
+
+The original app was a pure one-shot CLI tool. You ran it, it printed results,
+it exited. That worked fine from an existing terminal.
+
+But the goal was to package it as a Windows exe that users could double-click
+from the desktop. Double-clicking a one-shot CLI tool opens a window, prints
+help, and immediately closes — completely useless.
+
+The inspiration was Git Bash. When you open Git Bash, a window appears with a
+prompt that stays open and waits for commands. That was exactly the target
+experience — click the icon, a terminal opens, type scan commands, the window
+stays alive between them.
+
+`InteractiveShell` was built to deliver this. When launched with no arguments,
+the app drops into a persistent prompt instead of printing help and exiting.
+Commands are parsed and run in a loop until the user types `exit`.
+
+Building the shell immediately exposed a problem in the CLI parser: every error
+called `System.exit()`, which would close the entire shell window if the user
+mistyped a flag. This led directly to the next evolution.
+
+---
+
+### CLI Parsing — `System.exit()` Breaks the Shell
+
+The original `CliParser` handled every error by printing a message and calling
+`System.exit(1)`. For a one-shot CLI tool, this is correct — the app is done,
+exit cleanly.
+
+The problem became obvious while building `InteractiveShell`. If the user types
+a bad flag inside the shell, `System.exit()` would close the entire window —
+not just cancel the current command. A user mistyping `--extensins` instead of
+`--extensions` would lose their whole session.
+
+The fix was `CliParseException` — a custom exception that the shell can catch,
+print the error message, and loop back to the prompt without killing the process.
+
+Each parser method was split into two versions:
+- `parsePath()` / `parseConfig()` — used by one-shot CLI, catches exceptions and calls `System.exit()`
+- `parsePathOrThrow()` / `parseConfigOrThrow()` — used by the shell, throws instead of exiting
+
+`HelpRequested` and `VersionRequested` were added as separate signal classes
+because `--help` and `--version` aren't errors — they're intentional requests
+that needed to be handled differently from parse failures.
+
+---
+
+### Report File Naming — Anticipating the Overwrite Problem
+
+The first report implementation used fixed filenames — `report.txt` and
+`report.csv`. Simple, predictable, and immediately problematic: every scan
+overwrites the previous report.
+
+Before this ever caused a problem in practice, the issue was spotted upfront.
+Users might want to compare reports from different scans — a scan before and
+after cleaning up files, or scans of different directories. A fixed filename
+makes that impossible.
+
+Timestamps were added to every report filename: `report_2026-07-05_15-51-44.txt`.
+Each scan produces a uniquely named file. Nothing is ever overwritten.
+The timestamp is generated once per scan in `ReportFactory` and shared across
+all report generators so the `.txt` and `.csv` from the same scan always have
+matching names.
+
+---
