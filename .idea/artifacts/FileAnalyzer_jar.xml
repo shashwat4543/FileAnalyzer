@@ -1,9 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="FileAnalyzer:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/FileAnalyzer_jar</output-path>
-    <root id="archive" name="FileAnalyzer.jar">
-      <element id="module-output" name="FileAnalyzer" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jetbrains/annotations/24.0.0/annotations-24.0.0.jar" path-in-jar="/" />
-    </root>
-  </artifact>
-</component>
