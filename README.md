@@ -21,6 +21,10 @@ largest files, and duplicate detection.
 
 ---
 
+📖 **[Full Documentation](DOCUMENTATION.md)** — architecture, flag details, analyzer internals, real-world behavior, and future developments.
+
+---
+
 ## Installation
 
 Download and run the installer directly:
