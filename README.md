@@ -269,8 +269,7 @@ src/
     ├── FileCategory.java        Maps file extensions to category names
     ├── SizeFormat.java          Formats byte counts as KB/MB/GB strings
     ├── BenchmarkManager.java    Records and prints stage timing (--benchmark)
-    ├── ReportNameGenerator.java Generates timestamped report filenames
-    └── ValidInput.java          Legacy interactive path input (unused)
+    └── ReportNameGenerator.java Generates timestamped report filenames
 ```
 
 ---
