@@ -24,7 +24,7 @@ communicates with the layers directly above or below it. No layer skips another.
 
 ![Architecture Diagram](https://raw.githubusercontent.com/shashwat4543/FileAnalyzer/main/docs/screenshots/architecture-diagram.png)
 
-```
+---
 
 ### Package responsibilities
 
