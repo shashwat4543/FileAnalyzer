@@ -25,49 +25,6 @@ communicates with the layers directly above or below it. No layer skips another.
 ![Architecture Diagram](https://raw.githubusercontent.com/shashwat4543/FileAnalyzer/main/docs/screenshots/architecture-diagram.png)
 
 ```
-┌─────────────────────────────────────────────┐
-│                   app/                       │
-│  Main · AnalysisRunner · InteractiveShell    │
-│  CliParser · CliParseException · AppInfo     │
-│  Entry point, routing, argument parsing      │
-└────────────────────┬────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────┐
-│                 scanner/                     │
-│  DirectoryScanner · ZipScanner              │
-│  ProgressReporter                            │
-│  Walks the file system, collects FileInfo   │
-└────────────────────┬────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────┐
-│                 model/                       │
-│  FileInfo                                    │
-│  Single data object representing one file   │
-└────────────────────┬────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────┐
-│                analyzer/                     │
-│  CategoryAnalyzer · ExtensionAnalyzer        │
-│  LargestFileAnalyzer · DuplicateFileAnalyzer │
-│  Processes the file list, produces results  │
-└────────────────────┬────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────┐
-│                 report/                      │
-│  ReportFactory · ReportData · AnalysisConfig │
-│  ConsoleReport · TextReport · CsvReport      │
-│  ReportGenerator                             │
-│  Assembles and outputs results              │
-└────────────────────┬────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────┐
-│                  util/                       │
-│  HashUtil · HashExclusion · FileCategory     │
-│  SizeFormat · BenchmarkManager               │
-│  ReportNameGenerator                         │
-│  Shared helpers used across all layers      │
-└─────────────────────────────────────────────┘
-```
 
 ### Package responsibilities
 
