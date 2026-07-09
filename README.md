@@ -21,7 +21,9 @@ largest files, and duplicate detection.
 
 ---
 
-📖 **[Full Documentation](DOCUMENTATION.md)** — architecture, flag details, analyzer internals, real-world behavior, and future developments.
+## Data Flow
+
+![Data Flow Diagram](https://raw.githubusercontent.com/shashwat4543/FileAnalyzer/main/docs/screenshots/dataflow-diagram.png)
 
 ---
 
@@ -233,6 +235,12 @@ Requires JDK 17+ and WiX Toolset installed.
 
 ---
 
+## Architecture
+
+![Architecture Diagram](https://raw.githubusercontent.com/shashwat4543/FileAnalyzer/main/docs/screenshots/architecture-diagram.png)
+
+---
+
 ## Project Structure
 
 ```
@@ -269,7 +277,8 @@ src/
     ├── FileCategory.java        Maps file extensions to category names
     ├── SizeFormat.java          Formats byte counts as KB/MB/GB strings
     ├── BenchmarkManager.java    Records and prints stage timing (--benchmark)
-    └── ReportNameGenerator.java Generates timestamped report filenames
+    ├── ReportNameGenerator.java Generates timestamped report filenames
+    └── ValidInput.java          Legacy interactive path input (unused)
 ```
 
 ---
