@@ -22,6 +22,8 @@ report formats, and known limitations of File Analyzer.
 File Analyzer is built in layers. Each layer has a single responsibility and only
 communicates with the layers directly above or below it. No layer skips another.
 
+![Architecture Diagram](https://raw.githubusercontent.com/shashwat4543/FileAnalyzer/main/docs/screenshots/architecture-diagram.png)
+
 ```
 ┌─────────────────────────────────────────────┐
 │                   app/                       │
@@ -370,6 +372,8 @@ and loops back to the prompt — it never closes.
 
 This section traces exactly what happens from the moment you type a command
 to the moment results appear on screen.
+
+![Data Flow Diagram](https://raw.githubusercontent.com/shashwat4543/FileAnalyzer/main/docs/screenshots/dataflow-diagram.png)
 
 ### Step 1 — Entry point (Main)
 
